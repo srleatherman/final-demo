@@ -1,0 +1,157 @@
+#include "Encoder.h" //this gives us access to the encoder.h files 
+#define output2A 3 //this pin is output A for the encoder motor 2
+#define output2B 6 //this pin is output B for the encoder motor 2
+#define outputA 5 //this pin is output A for the encoder motor 1
+#define outputB 2 // this pin is output B for the encoder motor 1
+#define motorVoltageRight 9 //this is one of the two voltage pwm pins we could have picked
+#define motorVoltageLeft 10//thi is for the second motor voltage and a pwm pin
+#define button 4 // this pin is for setting the interupt
+#define signOfVoltage 7 // this is what direction the wheel will turn motor 1
+#define signOfVoltLeft 8
+#define flagIndicator 12 // this pin is if there is a flag
+
+Encoder motorRight(outputA, outputB);
+Encoder motorLeft(output2A, output2B);
+
+int startTime=0;
+int countRight=0;
+int countLeft =0;
+int nextCountLeft=0;
+int nextCountRight =0;
+float pi = 3.14159;
+int cpr = 3200;
+float startAngleL =0;
+float startAngleR = 0;
+float fAngleL =0;
+float fAngleR =0;
+float angularVelocityR =0;
+float angularVelocityL =0;
+int time1 =0;
+float Kp = 2;
+float Ki = .85;
+float Kd =0;
+float Kp2 = 9.60397;
+float Ki2 =0;
+float Kd2 = 0.49890588;
+float I = 0;
+float e_past = 0;
+float Ts = 0;
+float Tc = millis();
+float r_desired=2;
+float y =0;
+float r = 0.05;
+float d = 0.28;
+float e =0;
+float D =0;
+float u =0;
+float upwm =0;
+float rvdelta;
+float lvdelta;
+int loopcount =0;
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(19200);
+  //set up all of my output pins 
+  pinMode(button, OUTPUT);
+  digitalWrite(button, HIGH);
+  
+  pinMode(signOfVoltage,OUTPUT);
+  digitalWrite(signOfVoltage, HIGH);
+
+  pinMode(signOfVoltLeft,OUTPUT);
+  digitalWrite(signOfVoltLeft, HIGH);
+  
+  pinMode(motorVoltageRight, OUTPUT);
+  analogWrite(motorVoltageRight, 0);
+  
+  pinMode(motorVoltageLeft, OUTPUT);
+  analogWrite(motorVoltageLeft, 0);
+  
+  //set all of my input pins
+  pinMode(flagIndicator, INPUT);
+
+}
+
+void loop() {
+  loopcount = loopcount+1;
+  //inner loop
+  countRight = motorRight.read();
+  countLeft = motorLeft.read();
+
+  fAngleR = (float)countRight*2*pi/(float)cpr;
+  if(Ts>0){
+    angularVelocityR = -1*(float)1000*(fAngleR-startAngleR)/(float)(Ts);
+  }
+  
+  startAngleR = fAngleR;
+  fAngleL = (float)countLeft*2*pi/(float)cpr;
+  if(Ts>0){
+  angularVelocityL = -1*(float)1000*(fAngleL-startAngleL)/(float)(Ts);
+  }
+  startAngleL = fAngleL;
+  
+  r_desired = 1;
+  y =(float)(-1*r*(angularVelocityR-angularVelocityL))/(float)d;
+  e= r_desired-y;
+  
+  if(Ts>0){
+    D = (e-e_past)/Ts;
+    e_past= e;  
+  }
+  else{
+    D=0;
+  }  
+  I = I  + (float)(Ts*e)/(float)1000;
+ 
+  u = Kp*e + Ki*I + Kd*D;
+  
+  upwm = u*255/7.5;
+  rvdelta =upwm;
+  lvdelta = -upwm;
+  if(rvdelta >255){
+    rvdelta = 255;
+  }
+  if(rvdelta < -255){
+    rvdelta = -255;
+  }
+  if(lvdelta >255){
+    lvdelta = 255;
+  }
+  if(lvdelta < -255){
+    lvdelta = -255;
+  }
+  if(lvdelta>0){
+     digitalWrite(signOfVoltLeft, HIGH);
+  }else{
+     digitalWrite(signOfVoltLeft, LOW);
+  }
+  if(rvdelta>0){
+     digitalWrite(signOfVoltage, LOW);
+  }else{
+     digitalWrite(signOfVoltage, HIGH);
+  }
+  Serial.print(r_desired);
+  Serial.print('\t');
+  Serial.print(y);
+  Serial.print('\t');
+  Serial.print(e);
+  Serial.print('\t');
+  Serial.print(rvdelta);
+  Serial.print('\t');
+  Serial.print(lvdelta);
+  Serial.print('\t');  
+  Serial.println(u);
+  
+  if(loopcount<2){
+    analogWrite(motorVoltageRight,abs(0)); 
+    analogWrite(motorVoltageLeft,abs(0));
+  }else{
+    analogWrite(motorVoltageRight,abs(rvdelta)); 
+    analogWrite(motorVoltageLeft,abs(lvdelta));
+  }
+  
+  Ts =millis()- Tc;
+  Tc = millis();
+  delay(100);
+}
