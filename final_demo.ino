@@ -195,6 +195,8 @@ void loop() {
   }else if(eout == 0){
    analogWrite(motorVoltageRight,0); 
    analogWrite(motorVoltageLeft,0);
+   motorRight.write(0);
+   motorLeft.write(0);
   }else{
     analogWrite(motorVoltageRight,abs(rvdelta)); 
     analogWrite(motorVoltageLeft,abs(lvdelta));
