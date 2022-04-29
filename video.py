@@ -11,7 +11,7 @@ import cv2 as cv
 import smbus
 camera = PiCamera()
 camera.resolution = (640, 480)
-camera.framerate = 2
+camera.framerate = 30
 
 raw_capture = PiRGBArray(camera, size=(640, 480))
 bus = smbus.SMBus(1)
@@ -32,9 +32,9 @@ for frame in camera.capture_continuous(raw_capture, format="bgr", use_video_port
      
     img_hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
     #Upper and lower limits for color detection
-    red_lower = np.array([90,100,0])
-    red_upper = np.array([110,255,255])
-    #Isolating red
+    red_lower = np.array([90,70,100])
+    red_upper = np.array([110,150,255])
+    #Isolating red4
     mask = cv.inRange(img_hsv, red_lower, red_upper)
     #Applying filters and effects to sharpen mask
     imgmanip = cv.bitwise_and(img_hsv, img_hsv, mask = mask)
@@ -59,11 +59,11 @@ for frame in camera.capture_continuous(raw_capture, format="bgr", use_video_port
             angle=int((60/2)*((cX-320)/(640-320)))
             cYMin = tuple(contour[contour[:, :, 1].argmax()][0])
             cYMax = tuple(contour[contour[:, :, 1].argmin()][0])
+            cv.circle(image_copy, cYMin, 8, (255,255,0), -1)
+            cv.drawContours(image=image_copy, contours=cnts, contourIdx=-1, color=(0,255,0), thickness=2, lineType=cv.LINE_AA)
+            cv.imshow('image', image_copy)
             cYMinInt = int(cYMin[1])
             cYMaxInt = int(cYMax[0])
-        cv.circle(image_copy, cYMin, 8, (255,255,0), -1)
-        cv.drawContours(image=image_copy, contours=cnts, contourIdx=-1, color=(0,255,0), thickness=2, lineType=cv.LINE_AA)
-    cv.imshow('image', image_copy)
      
     # Wait for keyPress for 1 millisecond
     key = cv.waitKey(1) & 0xFF
@@ -72,7 +72,7 @@ for frame in camera.capture_continuous(raw_capture, format="bgr", use_video_port
     raw_capture.truncate(0)
      
 # If the `q` key was pressed, break from the loop
-    if (cX == 0 and cY == 0) or cv.contourArea(contour) < 1000:
+    if (cX == 0 and cY == 0):
         mode=0
     elif abs(angle)<10:
         if(cYMinInt>460):
