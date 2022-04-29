@@ -197,6 +197,16 @@ void loop() {
    analogWrite(motorVoltageLeft,0);
    motorRight.write(0);
    motorLeft.write(0);
+   eout =0;
+   phi = 0;
+   lastcountLeft = 0;
+   lastcountRight = 0;
+   loopcount =0;
+   I = 0;
+   I2 = 0;
+   startAngleR = 0;
+   startAngleL = 0;
+   
   }else{
     analogWrite(motorVoltageRight,abs(rvdelta)); 
     analogWrite(motorVoltageLeft,abs(lvdelta));
