@@ -79,9 +79,10 @@ for frame in camera.capture_continuous(raw_capture, format="bgr", use_video_port
     if (cX == 0 and cY == 0 and mode!=2):
         mode=0
     elif abs(angle)<=1 or mode==2:
-        if(cYMinInt>460):
+        if(cYMinInt>460 and stay!=1):
+            mode=4
             stay=1
-        if(cYMinInt<460 and stay==1):
+        elif(cYMinInt<460 and stay==1):
             mode=3
         else:
             mode=2
